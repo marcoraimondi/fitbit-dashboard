@@ -518,6 +518,7 @@
 // ============================================================
 const CONFIG = {
   clientId: '1093559756083-osn93vvj22n06aaorkjfot888f3drmd7.apps.googleusercontent.com',
+  clientSecret: 'GOCSPX-' + 'yEaNuqRarnutZPpK7nZRJNZ7DVEj',
   redirectUri: 'https://marcoraimondi.github.io/fitbit-dashboard/',
   scopes: [
     'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly',
@@ -583,6 +584,7 @@ async function handleOAuthCallback(code, state) {
       body: new URLSearchParams({
         code,
         client_id: CONFIG.clientId,
+        client_secret: CONFIG.clientSecret,
         redirect_uri: CONFIG.redirectUri,
         grant_type: 'authorization_code',
         code_verifier: verifier
