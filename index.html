@@ -6,509 +6,158 @@
 <title>Health Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #21262d;
-    --border: #30363d;
-    --accent: #58a6ff;
-    --accent2: #3fb950;
-    --accent3: #f78166;
-    --accent4: #d2a8ff;
-    --accent5: #ffa657;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --sleep-rem: #7c3aed;
-    --sleep-deep: #1d4ed8;
-    --sleep-light: #0284c7;
-    --sleep-awake: #6b7280;
-    --radius: 12px;
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    min-height: 100vh;
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-  /* ---- LOGIN SCREEN ---- */
-  #login-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-    background: radial-gradient(ellipse at 50% 0%, #1c2a3a 0%, var(--bg) 70%);
-  }
-  .login-logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.2rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 0 40px rgba(88,166,255,0.3);
-  }
-  .login-title {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, var(--accent), var(--accent4));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .login-subtitle {
-    color: var(--text-muted);
-    font-size: 1rem;
-    margin-bottom: 2.5rem;
-    text-align: center;
-    max-width: 360px;
-    line-height: 1.5;
-  }
-  .btn-google {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    padding: 0.9rem 2rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 20px rgba(88,166,255,0.35);
-    text-decoration: none;
-  }
-  .btn-google:hover {
-    background: #79b8ff;
-    box-shadow: 0 6px 28px rgba(88,166,255,0.5);
-    transform: translateY(-1px);
-  }
-  .btn-google svg { flex-shrink: 0; }
-  .login-note {
-    margin-top: 2rem;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    text-align: center;
-    max-width: 320px;
-    line-height: 1.5;
-  }
+/* HEADER */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #21262d; background: #161b22; }
+.logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: #58a6ff; }
+.logo-icon { width: 32px; height: 32px; background: #58a6ff22; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.user-badge { background: #21262d; border: 1px solid #30363d; border-radius: 20px; padding: 6px 14px; font-size: 13px; color: #8b949e; }
 
-  /* ---- DASHBOARD ---- */
-  #dashboard { display: none; }
+/* LOADING */
+#loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; gap: 16px; }
+.spinner { width: 40px; height: 40px; border: 3px solid #21262d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: #8b949e; font-size: 14px; }
 
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 2rem;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.15rem;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-  .header-logo-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  .user-badge {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-  .btn-logout {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    border-radius: 8px;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-logout:hover { border-color: var(--accent3); color: var(--accent3); }
+/* LOGIN */
+#login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; gap: 24px; text-align: center; padding: 24px; }
+.login-title { font-size: 28px; font-weight: 700; }
+.login-subtitle { color: #8b949e; font-size: 15px; max-width: 400px; line-height: 1.5; }
+.btn-login { background: linear-gradient(135deg, #58a6ff, #1f6feb); color: white; border: none; border-radius: 10px; padding: 14px 32px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: opacity 0.2s; }
+.btn-login:hover { opacity: 0.85; }
 
-  .main {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
-    display: grid;
-    gap: 1.5rem;
-  }
+/* DASHBOARD */
+#dashboard { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+.section-label { font-size: 11px; font-weight: 600; color: #8b949e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; margin-top: 28px; }
+.section-label:first-child { margin-top: 0; }
 
-  /* ---- SUMMARY CARDS ---- */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-  }
-  @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 500px) { .summary-grid { grid-template-columns: 1fr; } }
+/* SUMMARY CARDS */
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+.summary-card { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 18px; }
+.summary-icon { font-size: 22px; margin-bottom: 8px; }
+.summary-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.summary-value { font-size: 26px; font-weight: 700; margin: 4px 0; }
+.summary-sub { font-size: 12px; color: #8b949e; }
+.val-blue { color: #58a6ff; }
+.val-orange { color: #f78166; }
+.val-purple { color: #bc8cff; }
+.val-red { color: #ff7b72; }
+.val-green { color: #3fb950; }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.5rem;
-    box-shadow: var(--shadow);
-  }
-  .stat-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .stat-label {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-  .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -1px;
-  }
-  .stat-sub {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-  }
-  .stat-icon {
-    font-size: 1.4rem;
-    margin-bottom: 0.25rem;
-  }
+/* CHART CARDS */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
+.chart-card { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 18px; }
+.chart-card-full { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 18px; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.chart-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.chart-canvas-wrap { position: relative; height: 200px; }
+.no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; color: #8b949e; font-size: 13px; gap: 8px; }
+.no-data-icon { font-size: 28px; opacity: 0.4; }
 
-  /* ---- CHART CARDS ---- */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-  @media (max-width: 800px) { .charts-grid { grid-template-columns: 1fr; } }
-
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow);
-  }
-  .chart-card.full-width { grid-column: 1 / -1; }
-
-  .chart-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .chart-title {
-    font-size: 1rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .chart-period {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    background: var(--surface2);
-    border-radius: 6px;
-    padding: 0.25rem 0.65rem;
-    border: 1px solid var(--border);
-  }
-  .chart-container { position: relative; height: 220px; }
-
-  /* ---- LOADING ---- */
-  .loading-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(13,17,23,0.85);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  .loading-overlay.active { display: flex; }
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { color: var(--text-muted); font-size: 0.9rem; }
-
-  /* ---- ERROR TOAST ---- */
-  #error-toast {
-    display: none;
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: #3d1a1a;
-    border: 1px solid var(--accent3);
-    color: var(--accent3);
-    border-radius: var(--radius);
-    padding: 1rem 1.5rem;
-    z-index: 300;
-    max-width: 380px;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    box-shadow: var(--shadow);
-  }
-  #error-toast.show { display: block; }
-
-  /* ---- LEGEND ---- */
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-  }
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  /* ---- SECTION TITLES ---- */
-  .section-title {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    font-weight: 700;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  /* ---- NO DATA ---- */
-  .no-data {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 180px;
-    color: var(--text-muted);
-    font-size: 0.88rem;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+/* ERROR */
+#error-banner { display: none; background: #2d1b1b; border: 1px solid #ff7b72; border-radius: 10px; padding: 14px 18px; color: #ff7b72; font-size: 13px; margin-bottom: 16px; }
 </style>
 </head>
 <body>
 
-<!-- LOADING OVERLAY -->
-<div class="loading-overlay" id="loading">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Caricamento dati...</div>
+<div class="header">
+  <div class="logo"><div class="logo-icon">💗</div>Health Dashboard</div>
+  <div class="user-badge" id="user-email">—</div>
 </div>
 
-<!-- ERROR TOAST -->
-<div id="error-toast"></div>
+<div id="loading-screen" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-msg">Caricamento...</div>
+</div>
 
-<!-- LOGIN SCREEN -->
 <div id="login-screen">
-  <div class="login-logo">&#10084;</div>
+  <div style="font-size:48px">💗</div>
   <div class="login-title">Health Dashboard</div>
-  <div class="login-subtitle">
-    Visualizza i tuoi dati di salute e fitness da Google Health: attivita, sonno, frequenza cardiaca e molto altro.
-  </div>
-  <button class="btn-google" id="btn-login" onclick="startOAuth()">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+  <div class="login-subtitle">Visualizza i tuoi dati di salute e fitness sincronizzati da Google Fit.</div>
+  <button class="btn-login" onclick="startLogin()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
     </svg>
-    Connetti Google Health
+    Connetti Google Fit
   </button>
-  <div class="login-note">
-    I tuoi dati restano nel browser. Nessun server intermedio.<br>
-    Richiede un account Google con Google Health attivo.
-  </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard">
-  <header>
-    <div class="header-logo">
-      <div class="header-logo-icon">&#10084;</div>
-      Health Dashboard
+  <div id="error-banner"></div>
+
+  <div class="section-label">Riepilogo settimanale</div>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-icon">🚶</div>
+      <div class="summary-label">Passi medi/giorno</div>
+      <div class="summary-value val-blue" id="avg-steps">--</div>
+      <div class="summary-sub">ultimi 7 giorni</div>
     </div>
-    <div class="header-right">
-      <div class="user-badge" id="user-email">-</div>
-      <button class="btn-logout" onclick="logout()">Esci</button>
+    <div class="summary-card">
+      <div class="summary-icon">🔥</div>
+      <div class="summary-label">Calorie medie</div>
+      <div class="summary-value val-orange" id="avg-calories">--</div>
+      <div class="summary-sub">kcal al giorno</div>
     </div>
-  </header>
-
-  <div class="main">
-    <div class="section-title">Riepilogo settimanale</div>
-
-    <!-- SUMMARY CARDS -->
-    <div class="summary-grid">
-      <div class="card stat-card">
-        <div class="stat-icon">&#128694;</div>
-        <div class="stat-label">Passi medi/giorno</div>
-        <div class="stat-value" id="avg-steps" style="color: var(--accent)">--</div>
-        <div class="stat-sub">ultimi 7 giorni</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-icon">&#128293;</div>
-        <div class="stat-label">Calorie medie</div>
-        <div class="stat-value" id="avg-calories" style="color: var(--accent5)">--</div>
-        <div class="stat-sub">kcal al giorno</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-icon">&#128564;</div>
-        <div class="stat-label">Sonno medio</div>
-        <div class="stat-value" id="avg-sleep" style="color: var(--accent4)">--</div>
-        <div class="stat-sub">ore per notte</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-icon">&#128147;</div>
-        <div class="stat-label">FC a riposo</div>
-        <div class="stat-value" id="avg-hr" style="color: var(--accent3)">--</div>
-        <div class="stat-sub">bpm (media 30 gg)</div>
-      </div>
+    <div class="summary-card">
+      <div class="summary-icon">😴</div>
+      <div class="summary-label">Sonno medio</div>
+      <div class="summary-value val-purple" id="avg-sleep">--</div>
+      <div class="summary-sub">ore per notte</div>
     </div>
+    <div class="summary-card">
+      <div class="summary-icon">💓</div>
+      <div class="summary-label">FC a riposo</div>
+      <div class="summary-value val-red" id="avg-hr">--</div>
+      <div class="summary-sub">bpm (media 30 gg)</div>
+    </div>
+  </div>
 
-    <!-- CHARTS ROW 1 -->
-    <div class="charts-grid">
-      <!-- STEPS -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">&#128694; Passi giornalieri</div>
-          <span class="chart-period">7 giorni</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-steps"></canvas>
-          <div class="no-data" id="no-steps" style="display:none">
-            <span style="font-size:1.5rem">&#128694;</span>Nessun dato disponibile
-          </div>
-        </div>
-      </div>
+  <div class="section-label">Attività</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">🚶 Passi giornalieri</div></div>
+      <div class="chart-canvas-wrap" id="wrap-steps"><div class="no-data" id="no-steps"><div class="no-data-icon">🚶</div>Nessun dato disponibile</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">🔥 Calorie bruciate</div></div>
+      <div class="chart-canvas-wrap" id="wrap-calories"><div class="no-data" id="no-calories"><div class="no-data-icon">🔥</div>Nessun dato disponibile</div></div>
+    </div>
+  </div>
 
-      <!-- CALORIES -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">&#128293; Calorie bruciate</div>
-          <span class="chart-period">7 giorni</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-calories"></canvas>
-          <div class="no-data" id="no-calories" style="display:none">
-            <span style="font-size:1.5rem">&#128293;</span>Nessun dato disponibile
-          </div>
-        </div>
+  <div class="section-label">Sonno</div>
+  <div class="chart-card-full">
+    <div class="chart-header"><div class="chart-title">😴 Ore di sonno per notte</div></div>
+    <div class="chart-canvas-wrap" id="wrap-sleep"><div class="no-data" id="no-sleep"><div class="no-data-icon">😴</div>Nessun dato disponibile</div></div>
+  </div>
+
+  <div class="section-label">Frequenza cardiaca</div>
+  <div class="chart-card-full">
+    <div class="chart-header"><div class="chart-title">💓 Frequenza cardiaca a riposo — ultimi 30 giorni</div></div>
+    <div class="chart-canvas-wrap" id="wrap-hr"><div class="no-data" id="no-hr"><div class="no-data-icon">💓</div>Nessun dato disponibile</div></div>
+  </div>
+
+  <div class="section-label">Distanza e peso</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">📍 Distanza giornaliera (km)</div></div>
+      <div class="chart-canvas-wrap" id="wrap-distance"><div class="no-data" id="no-distance"><div class="no-data-icon">📍</div>Nessun dato disponibile</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="summary-icon" style="font-size:28px;margin-top:20px;text-align:center">⚖️</div>
+      <div style="text-align:center;margin-top:8px">
+        <div class="summary-label">Peso attuale</div>
+        <div class="summary-value val-green" id="weight-val" style="font-size:32px;margin-top:6px">--</div>
+        <div class="summary-sub">kg</div>
       </div>
     </div>
-
-    <!-- SLEEP -->
-    <div class="section-title" style="margin-top:0.5rem">Sonno</div>
-    <div class="chart-card full-width">
-      <div class="chart-header">
-        <div class="chart-title">&#128564; Fasi del sonno</div>
-        <span class="chart-period">7 giorni</span>
-      </div>
-      <div class="chart-container" style="height:260px">
-        <canvas id="chart-sleep"></canvas>
-        <div class="no-data" id="no-sleep" style="display:none">
-          <span style="font-size:1.5rem">&#128564;</span>Nessun dato disponibile
-        </div>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--sleep-deep)"></div>Deep</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--sleep-rem)"></div>REM</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--sleep-light)"></div>Light</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--sleep-awake)"></div>Awake</div>
-      </div>
-    </div>
-
-    <!-- CHARTS ROW 2 -->
-    <div class="section-title" style="margin-top:0.5rem">Cardiaco &amp; Benessere</div>
-    <div class="charts-grid">
-      <!-- HEART RATE -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">&#128147; FC a riposo</div>
-          <span class="chart-period">30 giorni</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-hr"></canvas>
-          <div class="no-data" id="no-hr" style="display:none">
-            <span style="font-size:1.5rem">&#128147;</span>Nessun dato disponibile
-          </div>
-        </div>
-      </div>
-
-      <!-- SPO2 + HRV -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">&#129504; SpO2 &amp; HRV</div>
-          <span class="chart-period">7 giorni</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-spo2hrv"></canvas>
-          <div class="no-data" id="no-spo2hrv" style="display:none">
-            <span style="font-size:1.5rem">&#129504;</span>Nessun dato disponibile
-          </div>
-        </div>
-        <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>SpO2 (%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--accent4)"></div>HRV (ms)</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="height:1rem"></div>
   </div>
 </div>
 
@@ -521,61 +170,57 @@ const CONFIG = {
   clientSecret: 'GOCSPX-' + 'yEaNuqRarnutZPpK7nZRJNZ7DVEj',
   redirectUri: 'https://marcoraimondi.github.io/fitbit-dashboard/',
   scopes: [
-    'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly',
-    'https://www.googleapis.com/auth/googlehealth.sleep.readonly',
-    'https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly',
-    'openid',
-    'email'
+    'https://www.googleapis.com/auth/fitness.activity.read',
+    'https://www.googleapis.com/auth/fitness.heart_rate.read',
+    'https://www.googleapis.com/auth/fitness.sleep.read',
+    'https://www.googleapis.com/auth/fitness.body.read',
+    'https://www.googleapis.com/auth/fitness.location.read',
+    'openid', 'email'
   ],
-  apiBase: 'https://health.googleapis.com/v4'
+  fitBase: 'https://www.googleapis.com/fitness/v1/users/me',
+  proxyUrl: 'https://odd-cloud-7fd2.marco-raimondi.workers.dev/'
 };
 
 // ============================================================
-// PKCE HELPERS
+// PKCE
 // ============================================================
-function base64urlEncode(buf) {
+function b64url(buf) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
-
-async function generatePKCE() {
-  const verifier = base64urlEncode(crypto.getRandomValues(new Uint8Array(32)));
+async function pkceChallenge() {
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  const challenge = base64urlEncode(digest);
-  return { verifier, challenge };
+  return { verifier, challenge: b64url(digest) };
 }
 
 // ============================================================
 // AUTH
 // ============================================================
-async function startOAuth() {
-  const { verifier, challenge } = await generatePKCE();
-  const state = base64urlEncode(crypto.getRandomValues(new Uint8Array(16)));
+async function startLogin() {
+  const { verifier, challenge } = await pkceChallenge();
+  const state = b64url(crypto.getRandomValues(new Uint8Array(16)));
   sessionStorage.setItem('pkce_verifier', verifier);
   sessionStorage.setItem('oauth_state', state);
-
   const params = new URLSearchParams({
     client_id: CONFIG.clientId,
     redirect_uri: CONFIG.redirectUri,
     response_type: 'code',
     scope: CONFIG.scopes.join(' '),
+    state,
     code_challenge: challenge,
     code_challenge_method: 'S256',
-    state: state,
     access_type: 'online',
     prompt: 'consent'
   });
-
-  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+  window.location = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
 async function handleOAuthCallback(code, state) {
   const savedState = sessionStorage.getItem('oauth_state');
-  if (state !== savedState) { showError('Errore di sicurezza OAuth: state mismatch.'); return; }
-
+  if (state !== savedState) { showError('Errore OAuth: state mismatch.'); return; }
   const verifier = sessionStorage.getItem('pkce_verifier');
   if (!verifier) { showError('PKCE verifier mancante.'); return; }
-
   showLoading('Autenticazione in corso...');
   try {
     const resp = await fetch('https://oauth2.googleapis.com/token', {
@@ -592,7 +237,6 @@ async function handleOAuthCallback(code, state) {
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error_description || data.error || 'Token exchange failed');
-
     sessionStorage.setItem('access_token', data.access_token);
     if (data.id_token) {
       try {
@@ -600,10 +244,7 @@ async function handleOAuthCallback(code, state) {
         sessionStorage.setItem('user_email', payload.email || '');
       } catch(e) {}
     }
-
-    // Clean URL
     window.history.replaceState({}, document.title, CONFIG.redirectUri);
-
     await loadDashboard();
   } catch(e) {
     hideLoading();
@@ -611,500 +252,298 @@ async function handleOAuthCallback(code, state) {
   }
 }
 
-function logout() {
-  sessionStorage.clear();
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('dashboard').style.display = 'none';
-}
-
 // ============================================================
-// API HELPERS
+// API HELPERS — via Cloudflare proxy for GET, direct for POST
 // ============================================================
-const PROXY_URL = 'https://odd-cloud-7fd2.marco-raimondi.workers.dev/';
+const PROXY = CONFIG.proxyUrl;
 
-async function apiGet(url) {
+async function apiFitGet(path) {
   const token = sessionStorage.getItem('access_token');
-  const proxyCall = PROXY_URL + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token);
+  const url = CONFIG.fitBase + path;
+  const proxyCall = PROXY + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token);
   const resp = await fetch(proxyCall);
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error('API error ' + resp.status + ': ' + text.substring(0, 200));
-  }
   const data = await resp.json();
-  if (data.error) throw new Error(data.error + (data.detail ? ': ' + data.detail.substring(0, 200) : ''));
+  if (data.error) throw new Error(JSON.stringify(data.error).substring(0, 200));
   return data;
 }
 
-function rfc3339(date) {
-  return date.toISOString();
+async function apiFitAggregate(aggregateBy, bucketByTime, daysBack) {
+  const token = sessionStorage.getItem('access_token');
+  const endMs = Date.now();
+  const startMs = endMs - daysBack * 86400000;
+  const body = {
+    aggregateBy,
+    bucketByTime: { durationMillis: 86400000 },
+    startTimeMillis: startMs,
+    endTimeMillis: endMs
+  };
+  const url = CONFIG.fitBase + '/dataset:aggregate';
+  const proxyCall = PROXY + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token) + '&method=POST&body=' + encodeURIComponent(JSON.stringify(body));
+  const resp = await fetch(proxyCall);
+  const data = await resp.json();
+  if (data.error) throw new Error(JSON.stringify(data.error).substring(0, 200));
+  return data;
 }
 
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+// ============================================================
+// DATE HELPERS
+// ============================================================
+function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); d.setHours(0,0,0,0); return d; }
+function fmtDate(ms) { return new Date(ms).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' }); }
+function getLast7Labels() { return Array.from({length:7}, (_,i) => fmtDate(daysAgo(6-i))); }
+function getLast30Labels() { return Array.from({length:30}, (_,i) => fmtDate(daysAgo(29-i))); }
+function safeMean(arr) { const v = arr.filter(x => x !== null && !isNaN(x)); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; }
 
-function formatDate(isoStr) {
-  const d = new Date(isoStr);
-  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-}
-
-function getLast7Labels() {
-  const labels = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = daysAgo(i);
-    labels.push(d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }));
-  }
-  return labels;
-}
-
-function getLast30Labels() {
-  const labels = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = daysAgo(i);
-    labels.push(d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }));
-  }
-  return labels;
-}
-
-// Map data points array to daily buckets
-function mapToDaily(points, days, valueExtractor) {
-  const result = new Array(days).fill(null);
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-
-  points.forEach(pt => {
-    const ts = pt.startTime || pt.endTime;
-    if (!ts) return;
-    const d = new Date(ts);
-    const diffDays = Math.floor((now - d) / 86400000);
-    const idx = (days - 1) - diffDays;
-    if (idx >= 0 && idx < days) {
-      const val = valueExtractor(pt);
-      if (val !== null && val !== undefined) {
-        if (result[idx] === null) result[idx] = val;
-        else result[idx] += val;
-      }
-    }
+// ============================================================
+// EXTRACT VALUE FROM FIT BUCKET
+// ============================================================
+function extractBucketValues(buckets, dataTypeName) {
+  return buckets.map(b => {
+    const ds = (b.dataset || []).find(d => d.dataSourceId && d.dataSourceId.includes(dataTypeName.replace('com.google.','').replace(/\./g,'-')));
+    const pt = ds && ds.point && ds.point[0];
+    if (!pt || !pt.value || !pt.value[0]) return null;
+    const v = pt.value[0];
+    return v.fpVal !== undefined ? v.fpVal : v.intVal !== undefined ? v.intVal : null;
   });
-  return result;
+}
+
+function extractFromBuckets(buckets) {
+  // Generic: return first numeric value found in first dataset's first point
+  return buckets.map(b => {
+    for (const ds of (b.dataset || [])) {
+      const pt = ds.point && ds.point[0];
+      if (!pt || !pt.value || !pt.value[0]) continue;
+      const v = pt.value[0];
+      const val = v.fpVal !== undefined ? v.fpVal : v.intVal !== undefined ? v.intVal : null;
+      if (val !== null && val > 0) return val;
+    }
+    return null;
+  });
 }
 
 // ============================================================
-// CHART FACTORY
+// CHART HELPERS
 // ============================================================
-const chartDefaults = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: '#21262d',
-      borderColor: '#30363d',
-      borderWidth: 1,
-      titleColor: '#e6edf3',
-      bodyColor: '#8b949e',
-      padding: 10
-    }
-  },
-  scales: {
-    x: {
-      grid: { color: '#21262d' },
-      ticks: { color: '#8b949e', font: { size: 11 }, maxRotation: 45 }
-    },
-    y: {
-      grid: { color: '#21262d' },
-      ticks: { color: '#8b949e', font: { size: 11 } }
-    }
-  }
-};
+const chartInstances = {};
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#21262d';
 
-function makeBarChart(canvasId, labels, data, color, unit) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  return new Chart(ctx, {
+function makeBarChart(canvasId, labels, data, color) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  chartInstances[canvasId] = new Chart(el, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: color + 'aa',
-        borderColor: color,
-        borderWidth: 1.5,
-        borderRadius: 4,
-        spanGaps: true
-      }]
-    },
-    options: {
-      ...chartDefaults,
-      plugins: {
-        ...chartDefaults.plugins,
-        tooltip: {
-          ...chartDefaults.plugins.tooltip,
-          callbacks: {
-            label: (ctx) => ` ${ctx.parsed.y !== null ? ctx.parsed.y.toLocaleString('it-IT', {maximumFractionDigits:1}) : '--'} ${unit}`
-          }
-        }
-      }
-    }
+    data: { labels, datasets: [{ data, backgroundColor: color + 'cc', borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + (ctx.raw !== null ? Math.round(ctx.raw).toLocaleString('it-IT') : 'N/D') } } }, scales: { x: { grid: { color: '#21262d' } }, y: { grid: { color: '#21262d' }, beginAtZero: true } } }
   });
 }
 
-function makeLineChart(canvasId, labels, datasets) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  return new Chart(ctx, {
+function makeLineChart(canvasId, labels, data, color) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  chartInstances[canvasId] = new Chart(el, {
     type: 'line',
-    data: { labels, datasets },
-    options: {
-      ...chartDefaults,
-      plugins: {
-        ...chartDefaults.plugins,
-        legend: { display: datasets.length > 1 ? false : false }
-      },
-      elements: {
-        line: { tension: 0.35 },
-        point: { radius: 3, hoverRadius: 5 }
-      }
-    }
+    data: { labels, datasets: [{ data, borderColor: color, backgroundColor: color + '22', fill: true, tension: 0.4, pointRadius: 3, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#21262d' } }, y: { grid: { color: '#21262d' } } } }
   });
 }
 
-function makeStackedBarChart(canvasId, labels, datasets) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  return new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: {
-          stacked: true,
-          grid: { color: '#21262d' },
-          ticks: { color: '#8b949e', font: { size: 11 }, maxRotation: 45 }
-        },
-        y: {
-          stacked: true,
-          grid: { color: '#21262d' },
-          ticks: {
-            color: '#8b949e',
-            font: { size: 11 },
-            callback: v => v + 'h'
-          }
-        }
-      },
-      plugins: {
-        ...chartDefaults.plugins,
-        tooltip: {
-          ...chartDefaults.plugins.tooltip,
-          callbacks: {
-            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) : '--'}h`
-          }
-        }
-      }
-    }
-  });
+function showNoData(wrapId, noDataId) {
+  const wrap = document.getElementById(wrapId);
+  const noData = document.getElementById(noDataId);
+  if (wrap) wrap.innerHTML = '';
+  if (noData) { wrap && wrap.appendChild(noData); noData.style.display = 'flex'; }
+}
+
+function makeCanvas(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return null;
+  wrap.innerHTML = '';
+  const c = document.createElement('canvas');
+  c.id = 'chart-' + wrapId;
+  c.style.width = '100%';
+  c.style.height = '200px';
+  wrap.appendChild(c);
+  return 'chart-' + wrapId;
 }
 
 // ============================================================
-// DATA FETCHING
+// UI HELPERS
 // ============================================================
-async function getUserId() {
-  try {
-    const data = await apiGet('https://health.googleapis.com/v4/users/me:getIdentity');
-    return data.userId || data.user_id || 'me';
-  } catch(e) {
-    console.warn('Could not get userId, using "me":', e.message);
-    return 'me';
-  }
-}
-
-function buildListUrl(userId, dataType, daysBack) {
-  const start = rfc3339(daysAgo(daysBack));
-  const end = rfc3339(new Date());
-  const params = new URLSearchParams({
-    'filter.startTime': start,
-    'filter.endTime': end,
-    'pageSize': '500'
-  });
-  return `${CONFIG.apiBase}/users/${userId}/dataTypes/${dataType}/dataPoints:list?${params}`;
-}
-
-async function fetchDataType(userId, dataType, daysBack) {
-  try {
-    const url = buildListUrl(userId, dataType, daysBack);
-    const data = await apiGet(url);
-    return data.dataPoints || data.data_points || [];
-  } catch(e) {
-    console.warn(`Failed to fetch ${dataType}:`, e.message);
-    return [];
-  }
-}
-
-// ============================================================
-// VALUE EXTRACTORS
-// ============================================================
-function extractScalar(pt) {
-  if (pt.value !== undefined) {
-    if (typeof pt.value === 'object') return pt.value.fpVal || pt.value.intVal || pt.value.value || null;
-    return pt.value;
-  }
-  if (pt.dataTypeName) {
-    const vals = pt.value || pt.values;
-    if (Array.isArray(vals) && vals.length > 0) {
-      return vals[0].fpVal || vals[0].intVal || vals[0] || null;
-    }
-  }
-  return null;
-}
-
-function safeMean(arr) {
-  const valid = arr.filter(v => v !== null && v !== undefined && !isNaN(v));
-  if (!valid.length) return null;
-  return valid.reduce((a, b) => a + b, 0) / valid.length;
-}
-
-// ============================================================
-// SLEEP PARSING (special case)
-// ============================================================
-function parseSleepPoints(points) {
-  const labels = getLast7Labels();
-  const deep   = new Array(7).fill(0);
-  const rem    = new Array(7).fill(0);
-  const light  = new Array(7).fill(0);
-  const awake  = new Array(7).fill(0);
-  const now = new Date();
-  now.setHours(23, 59, 59, 999);
-
-  points.forEach(pt => {
-    const ts = pt.startTime || pt.endTime;
-    if (!ts) return;
-    const d = new Date(ts);
-    const diffDays = Math.floor((now - d) / 86400000);
-    const idx = 6 - diffDays;
-    if (idx < 0 || idx > 6) return;
-
-    // Sleep phase values (Google Health uses numeric codes or strings)
-    const phase = pt.sleepStage || (pt.value && (pt.value.sleepStage || pt.value.stage)) || '';
-    const durationMs = pt.duration || (pt.endTime && pt.startTime
-      ? new Date(pt.endTime) - new Date(pt.startTime) : 0);
-    const hours = durationMs / 3600000;
-
-    // Map phases
-    const phaseStr = String(phase).toLowerCase();
-    if (phaseStr.includes('deep') || phase === 3 || phase === 4) deep[idx] += hours;
-    else if (phaseStr.includes('rem') || phase === 5) rem[idx] += hours;
-    else if (phaseStr.includes('light') || phase === 2) light[idx] += hours;
-    else if (phaseStr.includes('awake') || phase === 1) awake[idx] += hours;
-    else {
-      // Fallback: try totalSleepDuration field
-      const total = pt.totalSleepDuration || (pt.value && pt.value.totalSleepDuration);
-      if (total) light[idx] += total / 3600000;
-    }
-  });
-
-  // If all zeros but we have total sleep data, fill light as fallback
-  const totalHasData = [...deep, ...rem, ...light, ...awake].some(v => v > 0);
-  return { labels, deep, rem, light, awake, hasData: totalHasData };
-}
+function showLoading(msg) { document.getElementById('loading-screen').style.display = 'flex'; document.getElementById('loading-msg').textContent = msg || 'Caricamento...'; document.getElementById('login-screen').style.display = 'none'; document.getElementById('dashboard').style.display = 'none'; }
+function hideLoading() { document.getElementById('loading-screen').style.display = 'none'; }
+function updateLoading(msg) { const el = document.getElementById('loading-msg'); if (el) el.textContent = msg; }
+function showError(msg) { const b = document.getElementById('error-banner'); if (b) { b.textContent = msg; b.style.display = 'block'; } else { console.error(msg); } document.getElementById('login-screen').style.display = 'flex'; hideLoading(); }
 
 // ============================================================
 // LOAD DASHBOARD
 // ============================================================
 async function loadDashboard() {
-  showLoading('Recupero dei tuoi dati...');
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
+  showLoading('Recupero dati Google Fit...');
+  document.getElementById('dashboard').style.display = 'none';
 
   const email = sessionStorage.getItem('user_email') || '';
   if (email) document.getElementById('user-email').textContent = email;
 
   try {
-    updateLoading('Identificazione utente...');
-    const userId = await getUserId();
-
     updateLoading('Scaricamento attivita...');
-    const [stepsRaw, calsRaw, distRaw] = await Promise.all([
-      fetchDataType(userId, 'steps', 7),
-      fetchDataType(userId, 'active-energy-burned', 7),
-      fetchDataType(userId, 'distance', 7)
-    ]);
+    let stepsData7 = new Array(7).fill(null);
+    let calsData7  = new Array(7).fill(null);
+    let distData7  = new Array(7).fill(null);
+    let hrData30   = new Array(30).fill(null);
+    let sleepData7 = new Array(7).fill(null);
+    let weightVal  = null;
 
-    updateLoading('Scaricamento dati cardiaci...');
-    const hrRaw = await fetchDataType(userId, 'daily-resting-heart-rate', 30);
+    // Steps + Calories + Distance (7 days)
+    try {
+      const actResp = await apiFitAggregate([
+        { dataTypeName: 'com.google.step_count.delta' },
+        { dataTypeName: 'com.google.calories.expended' },
+        { dataTypeName: 'com.google.distance.delta' }
+      ], 1, 7);
+      const buckets = actResp.bucket || [];
+      stepsData7  = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('step_count')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? (pt.value[0].intVal || pt.value[0].fpVal || 0) : null; });
+      calsData7   = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('calories')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? Math.round(pt.value[0].fpVal || 0) : null; });
+      distData7   = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('distance')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? Math.round((pt.value[0].fpVal || 0) / 10) / 100 : null; });
+    } catch(e) { console.warn('Activity fetch failed:', e.message); }
 
+    // HR resting (30 days)
+    updateLoading('Scaricamento frequenza cardiaca...');
+    try {
+      const hrResp = await apiFitAggregate([
+        { dataTypeName: 'com.google.heart_rate.summary' }
+      ], 1, 30);
+      const buckets = hrResp.bucket || [];
+      hrData30 = buckets.map(b => {
+        const ds = b.dataset.find(d => d.dataSourceId.includes('heart_rate'));
+        const pt = ds && ds.point && ds.point[0];
+        if (!pt || !pt.value) return null;
+        // heart_rate.summary has [min, max, avg, ...] — take avg (index 2) or min (index 0)
+        const avg = pt.value[2] ? pt.value[2].fpVal : null;
+        const min = pt.value[0] ? pt.value[0].fpVal : null;
+        return avg || min || null;
+      });
+    } catch(e) { console.warn('HR fetch failed:', e.message); }
+
+    // Sleep (sessions, 7 days)
     updateLoading('Scaricamento sonno...');
-    const sleepRaw = await fetchDataType(userId, 'sleep-summary', 7);
+    try {
+      const endMs = Date.now();
+      const startMs = endMs - 7 * 86400000;
+      const sleepResp = await apiFitAggregate([
+        { dataTypeName: 'com.google.sleep.segment' }
+      ], 1, 7);
+      const buckets = sleepResp.bucket || [];
+      sleepData7 = buckets.map(b => {
+        const ds = b.dataset.find(d => d.dataSourceId.includes('sleep'));
+        if (!ds || !ds.point || !ds.point.length) return null;
+        let totalMs = 0;
+        ds.point.forEach(pt => {
+          // sleep segment type 1=awake, 2=sleep, 3=out-of-bed, 4=light, 5=deep, 6=rem
+          const type = pt.value && pt.value[0] ? pt.value[0].intVal : 0;
+          if (type >= 2 && type !== 3) {
+            const dur = parseInt(pt.endTimeNanos) - parseInt(pt.startTimeNanos);
+            totalMs += dur / 1e6;
+          }
+        });
+        return totalMs > 0 ? Math.round(totalMs / 36000) / 100 : null;
+      });
+    } catch(e) { console.warn('Sleep fetch failed:', e.message); }
 
-    updateLoading('Scaricamento SpO2 e HRV...');
-    const [spo2Raw, hrvRaw] = await Promise.all([
-      fetchDataType(userId, 'daily-oxygen-saturation', 7),
-      fetchDataType(userId, 'daily-heart-rate-variability', 7)
-    ]);
+    // Weight (latest)
+    updateLoading('Scaricamento peso...');
+    try {
+      const wResp = await apiFitAggregate([
+        { dataTypeName: 'com.google.weight.summary' }
+      ], 1, 30);
+      const buckets = wResp.bucket || [];
+      for (let i = buckets.length - 1; i >= 0; i--) {
+        const ds = buckets[i].dataset.find(d => d.dataSourceId.includes('weight'));
+        const pt = ds && ds.point && ds.point[0];
+        if (pt && pt.value && pt.value[0]) {
+          weightVal = Math.round(pt.value[0].fpVal * 10) / 10;
+          break;
+        }
+      }
+    } catch(e) { console.warn('Weight fetch failed:', e.message); }
 
-    updateLoading('Elaborazione grafici...');
+    // ---- RENDER ----
+    updateLoading('Disegno grafici...');
+    hideLoading();
+    document.getElementById('dashboard').style.display = 'block';
 
-    const labels7 = getLast7Labels();
+    const labels7  = getLast7Labels();
     const labels30 = getLast30Labels();
 
-    // -- STEPS --
-    const stepsData = mapToDaily(stepsRaw, 7, extractScalar);
-    const avgSteps = safeMean(stepsData);
-    document.getElementById('avg-steps').textContent = avgSteps !== null
-      ? Math.round(avgSteps).toLocaleString('it-IT') : '--';
-    if (stepsData.some(v => v !== null)) {
-      makeBarChart('chart-steps', labels7, stepsData, '#58a6ff', 'passi');
-    } else { showNoData('chart-steps', 'no-steps'); }
+    // Summary
+    const avgSteps = safeMean(stepsData7);
+    document.getElementById('avg-steps').textContent = avgSteps !== null ? Math.round(avgSteps).toLocaleString('it-IT') : '--';
+    const avgCals = safeMean(calsData7);
+    document.getElementById('avg-calories').textContent = avgCals !== null ? Math.round(avgCals).toLocaleString('it-IT') : '--';
+    const avgSleep = safeMean(sleepData7);
+    document.getElementById('avg-sleep').textContent = avgSleep !== null ? avgSleep.toFixed(1) + 'h' : '--';
+    const avgHr = safeMean(hrData30);
+    document.getElementById('avg-hr').textContent = avgHr !== null ? Math.round(avgHr) + ' bpm' : '--';
+    if (weightVal) document.getElementById('weight-val').textContent = weightVal;
 
-    // -- CALORIES --
-    const calsData = mapToDaily(calsRaw, 7, extractScalar);
-    const avgCals = safeMean(calsData);
-    document.getElementById('avg-calories').textContent = avgCals !== null
-      ? Math.round(avgCals).toLocaleString('it-IT') : '--';
-    if (calsData.some(v => v !== null)) {
-      makeBarChart('chart-calories', labels7, calsData, '#ffa657', 'kcal');
-    } else { showNoData('chart-calories', 'no-calories'); }
-
-    // -- SLEEP --
-    const sleepParsed = parseSleepPoints(sleepRaw);
-    if (sleepParsed.hasData) {
-      const totalSleep = sleepParsed.deep.map((d, i) =>
-        d + sleepParsed.rem[i] + sleepParsed.light[i] + sleepParsed.awake[i]);
-      const avgSleepH = safeMean(totalSleep.filter(v => v > 0));
-      document.getElementById('avg-sleep').textContent = avgSleepH !== null
-        ? avgSleepH.toFixed(1) + 'h' : '--';
-      makeStackedBarChart('chart-sleep', sleepParsed.labels, [
-        { label: 'Deep',  data: sleepParsed.deep,  backgroundColor: '#1d4ed8cc', borderRadius: 4 },
-        { label: 'REM',   data: sleepParsed.rem,   backgroundColor: '#7c3aedcc', borderRadius: 4 },
-        { label: 'Light', data: sleepParsed.light, backgroundColor: '#0284c7cc', borderRadius: 4 },
-        { label: 'Awake', data: sleepParsed.awake, backgroundColor: '#6b7280cc', borderRadius: 4 }
-      ]);
-    } else {
-      document.getElementById('avg-sleep').textContent = '--';
-      showNoData('chart-sleep', 'no-sleep');
+    // Steps chart
+    if (stepsData7.some(v => v !== null && v > 0)) {
+      const cId = makeCanvas('wrap-steps');
+      if (cId) makeBarChart(cId, labels7, stepsData7, '#58a6ff');
     }
 
-    // -- HEART RATE --
-    const hrData = mapToDaily(hrRaw, 30, extractScalar);
-    const avgHR = safeMean(hrData);
-    document.getElementById('avg-hr').textContent = avgHR !== null
-      ? Math.round(avgHR) + ' bpm' : '--';
-    if (hrData.some(v => v !== null)) {
-      makeLineChart('chart-hr', labels30, [{
-        data: hrData,
-        borderColor: '#f78166',
-        backgroundColor: '#f7816622',
-        borderWidth: 2,
-        fill: true,
-        spanGaps: true,
-        pointBackgroundColor: '#f78166'
-      }]);
-    } else { showNoData('chart-hr', 'no-hr'); }
+    // Calories chart
+    if (calsData7.some(v => v !== null && v > 0)) {
+      const cId = makeCanvas('wrap-calories');
+      if (cId) makeBarChart(cId, labels7, calsData7, '#f78166');
+    }
 
-    // -- SPO2 & HRV --
-    const spo2Data = mapToDaily(spo2Raw, 7, extractScalar);
-    const hrvData  = mapToDaily(hrvRaw, 7, extractScalar);
-    if (spo2Data.some(v => v !== null) || hrvData.some(v => v !== null)) {
-      makeLineChart('chart-spo2hrv', labels7, [
-        {
-          label: 'SpO2 (%)',
-          data: spo2Data,
-          borderColor: '#3fb950',
-          backgroundColor: '#3fb95022',
-          borderWidth: 2,
-          fill: false,
-          spanGaps: true,
-          pointBackgroundColor: '#3fb950',
-          yAxisID: 'y'
-        },
-        {
-          label: 'HRV (ms)',
-          data: hrvData,
-          borderColor: '#d2a8ff',
-          backgroundColor: '#d2a8ff22',
-          borderWidth: 2,
-          fill: false,
-          spanGaps: true,
-          pointBackgroundColor: '#d2a8ff',
-          yAxisID: 'y2'
-        }
-      ]);
-      // Patch chart options for dual axis
-      const chartInstance = Chart.getChart('chart-spo2hrv');
-      if (chartInstance) {
-        chartInstance.options.scales.y2 = {
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          ticks: { color: '#8b949e', font: { size: 11 } }
-        };
-        chartInstance.update();
-      }
-    } else { showNoData('chart-spo2hrv', 'no-spo2hrv'); }
+    // Sleep chart
+    if (sleepData7.some(v => v !== null && v > 0)) {
+      const cId = makeCanvas('wrap-sleep');
+      if (cId) makeBarChart(cId, labels7, sleepData7, '#bc8cff');
+    }
 
-    hideLoading();
+    // HR chart
+    if (hrData30.some(v => v !== null && v > 0)) {
+      const cId = makeCanvas('wrap-hr');
+      if (cId) makeLineChart(cId, labels30, hrData30, '#ff7b72');
+    }
+
+    // Distance chart
+    if (distData7.some(v => v !== null && v > 0)) {
+      const cId = makeCanvas('wrap-distance');
+      if (cId) makeBarChart(cId, labels7, distData7, '#3fb950');
+    }
 
   } catch(e) {
     hideLoading();
-    showError('Errore nel caricamento: ' + e.message);
+    document.getElementById('dashboard').style.display = 'block';
+    const b = document.getElementById('error-banner');
+    if (b) { b.textContent = 'Errore nel caricamento dati: ' + e.message; b.style.display = 'block'; }
   }
 }
 
-function showNoData(canvasId, noDataId) {
-  const canvas = document.getElementById(canvasId);
-  if (canvas) canvas.style.display = 'none';
-  const nd = document.getElementById(noDataId);
-  if (nd) nd.style.display = 'flex';
-}
-
 // ============================================================
-// LOADING / ERROR UI
+// INIT
 // ============================================================
-function showLoading(text) {
-  document.getElementById('loading-text').textContent = text || 'Caricamento...';
-  document.getElementById('loading').classList.add('active');
-}
-function updateLoading(text) {
-  document.getElementById('loading-text').textContent = text;
-}
-function hideLoading() {
-  document.getElementById('loading').classList.remove('active');
-}
-function showError(msg) {
-  const el = document.getElementById('error-toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 6000);
-}
-
-// ============================================================
-// INIT — check if we're returning from OAuth
-// ============================================================
-(function init() {
+async function init() {
+  const token = sessionStorage.getItem('access_token');
   const params = new URLSearchParams(window.location.search);
-  const code  = params.get('code');
+  const code = params.get('code');
   const state = params.get('state');
-  const error = params.get('error');
-
-  if (error) {
-    showError('Login annullato o errore OAuth: ' + error);
-    return;
-  }
 
   if (code && state) {
-    handleOAuthCallback(code, state);
-    return;
+    await handleOAuthCallback(code, state);
+  } else if (token) {
+    await loadDashboard();
   }
+  // else: show login screen (already visible by default)
+}
 
-  // Already logged in?
-  const token = sessionStorage.getItem('access_token');
-  if (token) {
-    loadDashboard();
-    return;
-  }
-
-  // Show login
-  document.getElementById('login-screen').style.display = 'flex';
-})();
+init();
 </script>
 </body>
 </html>
