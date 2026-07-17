@@ -620,14 +620,19 @@ function logout() {
 // ============================================================
 // API HELPERS
 // ============================================================
+const PROXY_URL = 'https://script.google.com/macros/s/AKfycbwkYj3wWjuCSuevF7CGltT_N0nPtOOVabHQ4ciM7zfgSYg1S6l7wQrCXrvAKuIaAUiE/exec';
+
 async function apiGet(url) {
   const token = sessionStorage.getItem('access_token');
-  const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+  const proxyCall = PROXY_URL + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token);
+  const resp = await fetch(proxyCall);
   if (!resp.ok) {
     const text = await resp.text();
     throw new Error('API error ' + resp.status + ': ' + text.substring(0, 200));
   }
-  return resp.json();
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error + (data.detail ? ': ' + data.detail.substring(0, 200) : ''));
+  return data;
 }
 
 function rfc3339(date) {
