@@ -253,20 +253,8 @@ async function handleOAuthCallback(code, state) {
 }
 
 // ============================================================
-// API HELPERS — via Cloudflare proxy for GET, direct for POST
+// API HELPERS — direct to Google Fit (supports CORS natively)
 // ============================================================
-const PROXY = CONFIG.proxyUrl;
-
-async function apiFitGet(path) {
-  const token = sessionStorage.getItem('access_token');
-  const url = CONFIG.fitBase + path;
-  const proxyCall = PROXY + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token);
-  const resp = await fetch(proxyCall);
-  const data = await resp.json();
-  if (data.error) throw new Error(JSON.stringify(data.error).substring(0, 200));
-  return data;
-}
-
 async function apiFitAggregate(aggregateBy, bucketByTime, daysBack) {
   const token = sessionStorage.getItem('access_token');
   const endMs = Date.now();
@@ -278,8 +266,12 @@ async function apiFitAggregate(aggregateBy, bucketByTime, daysBack) {
     endTimeMillis: endMs
   };
   const url = CONFIG.fitBase + '/dataset:aggregate';
-  const proxyCall = PROXY + '?url=' + encodeURIComponent(url) + '&token=' + encodeURIComponent(token) + '&method=POST&body=' + encodeURIComponent(JSON.stringify(body));
-  const resp = await fetch(proxyCall);
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) { const t = await resp.text(); throw new Error('HTTP ' + resp.status + ': ' + t.substring(0, 200)); }
   const data = await resp.json();
   if (data.error) throw new Error(JSON.stringify(data.error).substring(0, 200));
   return data;
