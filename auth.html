@@ -348,35 +348,11 @@ Per favore:
      ]
    }
 
-2. Salva anche il file di refresh helper in /workspace/.googlehealth/gh_refresh.py con questo contenuto:
-
-   import urllib.request, urllib.error, json
-   TOKENS_PATH = '/workspace/.googlehealth/tokens.json'
-   WORKER_URL  = 'https://odd-cloud-7fd2.marco-raimondi.workers.dev/refresh'
-   def load_tokens():
-       with open(TOKENS_PATH) as f: return json.load(f)
-   def save_tokens(t):
-       with open(TOKENS_PATH, 'w') as f: json.dump(t, f, indent=2)
-   def refresh_access_token():
-       t = load_tokens()
-       payload = json.dumps({'refresh_token': t['refresh_token'], 'client_id': t['client_id']}).encode()
-       req = urllib.request.Request(WORKER_URL, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
-       resp = json.loads(urllib.request.urlopen(req, timeout=15).read())
-       t['access_token'] = resp['access_token']
-       save_tokens(t)
-       return t['access_token']
-   def get_valid_token():
-       t = load_tokens()
-       tok = t['access_token']
-       req = urllib.request.Request('https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints?pageSize=1', headers={'Authorization': 'Bearer ' + tok})
-       try:
-           urllib.request.urlopen(req, timeout=10).read()
-           return tok
-       except urllib.error.HTTPError as e:
-           if e.code in (401, 403): return refresh_access_token()
-           raise
-   if __name__ == '__main__':
-       print('Token aggiornato:', refresh_access_token()[:30] + '...')
+2. Scarica e salva gli script helper da GitHub:
+   - gh_refresh.py  → /workspace/.googlehealth/gh_refresh.py
+     wget -O /workspace/.googlehealth/gh_refresh.py https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/gh_refresh.py
+   - gh_daily_collect.py → /workspace/.googlehealth/gh_daily_collect.py
+     wget -O /workspace/.googlehealth/gh_daily_collect.py https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/gh_daily_collect.py
 
 3. Crea un cron job "googlehealth-daily" (ogni giorno alle 06:00 Europe/Rome) che:
    a. Esegue python3 /workspace/.googlehealth/gh_daily_collect.py per raccogliere i dati del giorno precedente (passi, calorie, sonno, FC, peso) e salvarli in /workspace/.googlehealth/data/YYYY-MM-DD.json
@@ -388,7 +364,10 @@ Per favore:
    b. Se non ci sono o il dato richiesto è di oggi, chiamare direttamente la Google Health API usando get_valid_token() da gh_refresh.py (rinnova il token automaticamente se scaduto)
    c. Mai dire "token scaduto" all'utente — rinnovarlo in silenzio e riprovare
 
-5. Confermami quando tutto è pronto.`;
+5. Leggi la guida completa per dettagli tecnici sull'API:
+   https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/googlehealth_guide.md
+
+6. Confermami quando tutto è pronto.`;
 }
 
 function copyVal(which) {
