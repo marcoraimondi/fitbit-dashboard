@@ -172,32 +172,33 @@ body {
   <div id="screen-success">
     <div class="success-header">✅ Autorizzazione completata</div>
 
-    <div class="token-block">
-      <div class="token-label">Access Token</div>
-      <div class="token-row">
-        <div class="token-value" id="val-access"></div>
-        <button class="btn-copy" id="btn-copy-access" onclick="copyVal('access')" title="Copia">📋</button>
-      </div>
-    </div>
-
-    <div class="token-block">
-      <div class="token-label">Refresh Token</div>
-      <div class="token-row">
-        <div class="token-value" id="val-refresh"></div>
-        <button class="btn-copy" id="btn-copy-refresh" onclick="copyVal('refresh')" title="Copia">📋</button>
-      </div>
+    <div class="prompt-desc">Copia il prompt qui sotto e incollalo nella chat con il bot. Configura tutto automaticamente.</div>
+    <div class="prompt-text" id="prompt-text"></div>
+    <div class="prompt-footer">
+      <button class="btn-copy-prompt" id="btn-copy-prompt" onclick="copyPrompt()">📋 Copia prompt</button>
     </div>
 
     <hr class="divider">
 
-    <div>
-      <div class="prompt-label">Prompt per il bot</div>
-      <div class="prompt-desc">Copia questo testo e incollalo nella chat con il bot. Configura automaticamente la connessione e il refresh automatico del token.</div>
-      <div class="prompt-text" id="prompt-text"></div>
-      <div class="prompt-footer">
-        <button class="btn-copy-prompt" id="btn-copy-prompt" onclick="copyPrompt()">📋 Copia prompt</button>
+    <details style="width:100%;margin-top:8px;">
+      <summary style="cursor:pointer;color:#8b949e;font-size:13px;user-select:none;">🔑 Mostra token grezzi</summary>
+      <div style="margin-top:12px;">
+        <div class="token-block">
+          <div class="token-label">Access Token</div>
+          <div class="token-row">
+            <div class="token-value" id="val-access"></div>
+            <button class="btn-copy" id="btn-copy-access" onclick="copyVal('access')" title="Copia">📋</button>
+          </div>
+        </div>
+        <div class="token-block">
+          <div class="token-label">Refresh Token</div>
+          <div class="token-row">
+            <div class="token-value" id="val-refresh"></div>
+            <button class="btn-copy" id="btn-copy-refresh" onclick="copyVal('refresh')" title="Copia">📋</button>
+          </div>
+        </div>
       </div>
-    </div>
+    </details>
   </div>
 
   <!-- ERROR -->
@@ -324,60 +325,16 @@ function showTokens(accessToken, refreshToken, email) {
 
 function buildPrompt(accessToken, refreshToken, email) {
   const hasRefresh = refreshToken && refreshToken.length > 10;
-  return `Ciao! Voglio collegare il mio account Google Health alla dashboard di salute.
+  return `Ciao! Ho appena autorizzato Google Health per condividere i miei dati di salute con te.${email ? '\nEmail account: ' + email : ''}
 
-Ecco i miei token OAuth Google:
+Access token: ${accessToken}
+${hasRefresh ? 'Refresh token: ' + refreshToken : ''}
 
-ACCESS TOKEN:
-${accessToken}
+Per configurare tutto, leggi le istruzioni complete su:
+https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/googlehealth_guide.md
 
-REFRESH TOKEN:
-${hasRefresh ? refreshToken : '(non disponibile)'}
-${email ? '\nEmail account: ' + email + '\n' : ''}
-IMPORTANTE — comportamento atteso:
-Quando mi parli di passi, sonno, frequenza cardiaca, calorie o salute in generale, comportati come il mio coach personale della salute:
-- Parlami come un medico o personal trainer, non come un informatico
-- Non menzionare mai API, token, JSON, script, cron o termini tecnici
-- Interpreta i dati e dimmi cosa significano per la mia salute
-- Fai domande su come mi sento, se ho dormito bene, se ho avuto energie
-- Se i dati mancano o sono incompleti, dimmelo in modo semplice ("non ho ancora i tuoi dati di ieri")
-- Festeggia i progressi, segnala se qualcosa non va, suggerisci miglioramenti pratici
-Per tutti gli altri argomenti (lavoro, email, calendario, ecc.) comportati normalmente.
-
-Per favore:
-1. Salva questi token in /workspace/.googlehealth/tokens.json nel formato:
-   {
-     "access_token": "...",
-     "refresh_token": "...",
-     "token_uri": "https://oauth2.googleapis.com/token",
-     "client_id": "1093559756083-osn93vvj22n06aaorkjfot888f3drmd7.apps.googleusercontent.com",
-     "scopes": [
-       "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
-       "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly",
-       "https://www.googleapis.com/auth/googlehealth.sleep.readonly"
-     ]
-   }
-
-2. Scarica e salva gli script helper da GitHub:
-   - gh_refresh.py  → /workspace/.googlehealth/gh_refresh.py
-     wget -O /workspace/.googlehealth/gh_refresh.py https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/gh_refresh.py
-   - gh_daily_collect.py → /workspace/.googlehealth/gh_daily_collect.py
-     wget -O /workspace/.googlehealth/gh_daily_collect.py https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/gh_daily_collect.py
-
-3. Crea un cron job "googlehealth-daily" (ogni giorno alle 06:00 Europe/Rome) che:
-   a. Esegue python3 /workspace/.googlehealth/gh_daily_collect.py per raccogliere i dati del giorno precedente (passi, calorie, sonno, FC, peso) e salvarli in /workspace/.googlehealth/data/YYYY-MM-DD.json
-   b. Esegue anche python3 /workspace/.googlehealth/gh_refresh.py per rinnovare il token
-   Lo script gh_daily_collect.py chiama già get_valid_token() internamente, quindi il token viene rinnovato automaticamente anche durante la raccolta.
-
-4. Per ogni futura domanda sulla salute (passi, sonno, FC, calorie, peso), il bot deve:
-   a. Prima cercare i dati in /workspace/.googlehealth/data/ (file JSON per data)
-   b. Se non ci sono o il dato richiesto è di oggi, chiamare direttamente la Google Health API usando get_valid_token() da gh_refresh.py (rinnova il token automaticamente se scaduto)
-   c. Mai dire "token scaduto" all'utente — rinnovarlo in silenzio e riprovare
-
-5. Leggi la guida completa per dettagli tecnici sull'API:
-   https://raw.githubusercontent.com/marcoraimondi/fitbit-dashboard/main/googlehealth_guide.md
-
-6. Confermami quando tutto è pronto.`;
+Confermami quando sei pronto.`;
+}
 }
 
 function copyVal(which) {
