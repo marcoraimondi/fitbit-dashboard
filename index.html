@@ -77,7 +77,7 @@ body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMac
 <div id="login-screen">
   <div style="font-size:48px">💗</div>
   <div class="login-title">Health Dashboard</div>
-  <div class="login-subtitle">Visualizza i tuoi dati di salute e fitness sincronizzati da Google Fit.</div>
+  <div class="login-subtitle">Visualizza i tuoi dati di salute e fitness sincronizzati da Google Health (Fitbit).</div>
   <button class="btn-login" onclick="startLogin()">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -85,7 +85,7 @@ body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMac
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
     </svg>
-    Connetti Google Fit
+    Connetti Google Health
   </button>
 </div>
 
@@ -167,17 +167,15 @@ body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMac
 // ============================================================
 const CONFIG = {
   clientId: '1093559756083-osn93vvj22n06aaorkjfot888f3drmd7.apps.googleusercontent.com',
-  clientSecret: 'GOCSPX-' + 'yEaNuqRarnutZPpK7nZRJNZ7DVEj',
+  clientSecret: 'GOCSPX-' + 'yh70ezEt0X2zzx3bbN_spkLT_jEx',
   redirectUri: 'https://marcoraimondi.github.io/fitbit-dashboard/',
   scopes: [
-    'https://www.googleapis.com/auth/fitness.activity.read',
-    'https://www.googleapis.com/auth/fitness.heart_rate.read',
-    'https://www.googleapis.com/auth/fitness.sleep.read',
-    'https://www.googleapis.com/auth/fitness.body.read',
-    'https://www.googleapis.com/auth/fitness.location.read',
+    'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly',
+    'https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly',
+    'https://www.googleapis.com/auth/googlehealth.sleep.readonly',
     'openid', 'email'
   ],
-  fitBase: 'https://www.googleapis.com/fitness/v1/users/me',
+  healthBase: 'https://health.googleapis.com/v4/users/me',
   proxyUrl: 'https://odd-cloud-7fd2.marco-raimondi.workers.dev/'
 };
 
@@ -250,31 +248,6 @@ async function handleOAuthCallback(code, state) {
     hideLoading();
     showError('Errore durante il login: ' + e.message);
   }
-}
-
-// ============================================================
-// API HELPERS — direct to Google Fit (supports CORS natively)
-// ============================================================
-async function apiFitAggregate(aggregateBy, bucketByTime, daysBack) {
-  const token = sessionStorage.getItem('access_token');
-  const endMs = Date.now();
-  const startMs = endMs - daysBack * 86400000;
-  const body = {
-    aggregateBy,
-    bucketByTime: { durationMillis: 86400000 },
-    startTimeMillis: startMs,
-    endTimeMillis: endMs
-  };
-  const url = CONFIG.fitBase + '/dataset:aggregate';
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!resp.ok) { const t = await resp.text(); throw new Error('HTTP ' + resp.status + ': ' + t.substring(0, 200)); }
-  const data = await resp.json();
-  if (data.error) throw new Error(JSON.stringify(data.error).substring(0, 200));
-  return data;
 }
 
 // ============================================================
@@ -372,8 +345,50 @@ function showError(msg) { const b = document.getElementById('error-banner'); if 
 // ============================================================
 // LOAD DASHBOARD
 // ============================================================
+// ============================================================
+// GOOGLE HEALTH API HELPERS
+// ============================================================
+async function apiHealthGet(dataType, params) {
+  const token = sessionStorage.getItem('access_token');
+  const base = `https://health.googleapis.com/v4/users/me/dataTypes/${dataType}/dataPoints`;
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  const resp = await fetch(base + qs, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (!resp.ok) throw new Error(`Health API ${dataType} error: ${resp.status}`);
+  return resp.json();
+}
+
+function isoDate(daysAgo) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().replace('.000Z', 'Z');
+}
+
+// Build a date-indexed map from dataPoints
+function pointsToMap(pts, keyFn, valFn) {
+  const map = {};
+  for (const pt of (pts || [])) {
+    const k = keyFn(pt);
+    const v = valFn(pt);
+    if (k && v !== null && v !== undefined) map[k] = v;
+  }
+  return map;
+}
+
+function physDateKey(time) {
+  // physicalTime like "2026-07-17T22:57:00Z" -> "2026-07-17"
+  if (!time) return null;
+  return time.substring(0, 10);
+}
+
+function civilDateKey(civilTime) {
+  if (!civilTime || !civilTime.date) return null;
+  const d = civilTime.date;
+  return `${d.year}-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`;
+}
+
 async function loadDashboard() {
-  showLoading('Recupero dati Google Fit...');
+  showLoading('Recupero dati Google Health...');
   document.getElementById('dashboard').style.display = 'none';
 
   const email = sessionStorage.getItem('user_email') || '';
@@ -388,76 +403,125 @@ async function loadDashboard() {
     let sleepData7 = new Array(7).fill(null);
     let weightVal  = null;
 
-    // Steps + Calories + Distance (7 days)
-    try {
-      const actResp = await apiFitAggregate([
-        { dataTypeName: 'com.google.step_count.delta' },
-        { dataTypeName: 'com.google.calories.expended' },
-        { dataTypeName: 'com.google.distance.delta' }
-      ], 1, 7);
-      const buckets = actResp.bucket || [];
-      stepsData7  = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('step_count')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? (pt.value[0].intVal || pt.value[0].fpVal || 0) : null; });
-      calsData7   = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('calories')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? Math.round(pt.value[0].fpVal || 0) : null; });
-      distData7   = buckets.map(b => { const ds = b.dataset.find(d => d.dataSourceId.includes('distance')); const pt = ds && ds.point && ds.point[0]; return pt && pt.value && pt.value[0] ? Math.round((pt.value[0].fpVal || 0) / 10) / 100 : null; });
-    } catch(e) { console.warn('Activity fetch failed:', e.message); }
+    const start7  = isoDate(7);
+    const start30 = isoDate(30);
+    const now     = new Date().toISOString().replace('.000Z','Z');
 
-    // HR resting (30 days)
+    // ---- ACTIVE ENERGY (calorie) ----
+    try {
+      updateLoading('Scaricamento calorie...');
+      const r = await apiHealthGet('active-energy-burned', { pageSize: 10000 });
+      const pts = r.dataPoints || [];
+      // aggregate per civil date
+      const map = {};
+      for (const pt of pts) {
+        const k = civilDateKey(pt.activeEnergyBurned?.interval?.civilStartTime);
+        const v = pt.activeEnergyBurned?.kilocalories;
+        if (k && v != null) map[k] = (map[k] || 0) + v;
+      }
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        const k = d.toISOString().substring(0,10);
+        calsData7[i] = map[k] != null ? Math.round(map[k]) : null;
+      }
+    } catch(e) { console.warn('Calories fetch failed:', e.message); }
+
+    // ---- STEPS (via active-zone-minutes as proxy, or direct) ----
+    // Steps don't support filter, try without and aggregate
+    try {
+      updateLoading('Scaricamento passi...');
+      const r = await apiHealthGet('steps', { pageSize: 10000 });
+      const pts = r.dataPoints || [];
+      const map = {};
+      for (const pt of pts) {
+        const k = civilDateKey(pt.steps?.interval?.civilStartTime);
+        const v = pt.steps?.count;
+        if (k && v != null) map[k] = (map[k] || 0) + v;
+      }
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        const k = d.toISOString().substring(0,10);
+        stepsData7[i] = map[k] != null ? map[k] : null;
+      }
+    } catch(e) { console.warn('Steps fetch failed:', e.message); }
+
+    // ---- DISTANCE ----
+    try {
+      updateLoading('Scaricamento distanza...');
+      const r = await apiHealthGet('distance', { pageSize: 10000 });
+      const pts = r.dataPoints || [];
+      const map = {};
+      for (const pt of pts) {
+        const k = civilDateKey(pt.distance?.interval?.civilStartTime);
+        const v = pt.distance?.meters;
+        if (k && v != null) map[k] = (map[k] || 0) + v;
+      }
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        const k = d.toISOString().substring(0,10);
+        distData7[i] = map[k] != null ? Math.round(map[k] / 10) / 100 : null;
+      }
+    } catch(e) { console.warn('Distance fetch failed:', e.message); }
+
+    // ---- HEART RATE (ultimi 30 giorni) ----
     updateLoading('Scaricamento frequenza cardiaca...');
     try {
-      const hrResp = await apiFitAggregate([
-        { dataTypeName: 'com.google.heart_rate.summary' }
-      ], 1, 30);
-      const buckets = hrResp.bucket || [];
-      hrData30 = buckets.map(b => {
-        const ds = b.dataset.find(d => d.dataSourceId.includes('heart_rate'));
-        const pt = ds && ds.point && ds.point[0];
-        if (!pt || !pt.value) return null;
-        // heart_rate.summary has [min, max, avg, ...] — take avg (index 2) or min (index 0)
-        const avg = pt.value[2] ? pt.value[2].fpVal : null;
-        const min = pt.value[0] ? pt.value[0].fpVal : null;
-        return avg || min || null;
-      });
+      const r = await apiHealthGet('heart-rate', { pageSize: 10000 });
+      const pts = r.dataPoints || [];
+      // aggregate resting HR per day (min of the day as proxy)
+      const map = {};
+      for (const pt of pts) {
+        const k = pt.heartRate?.sampleTime?.civilTime ? civilDateKey(pt.heartRate.sampleTime.civilTime) : null;
+        const v = pt.heartRate?.beatsPerMinute;
+        if (k && v != null) {
+          if (!map[k]) map[k] = { min: v, sum: 0, count: 0 };
+          map[k].min = Math.min(map[k].min, v);
+          map[k].sum += v;
+          map[k].count++;
+        }
+      }
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(); d.setDate(d.getDate() - (29 - i));
+        const k = d.toISOString().substring(0,10);
+        hrData30[i] = map[k] ? Math.round(map[k].min) : null;
+      }
     } catch(e) { console.warn('HR fetch failed:', e.message); }
 
-    // Sleep (sessions, 7 days)
+    // ---- SLEEP (ultimi 7 giorni) ----
     updateLoading('Scaricamento sonno...');
     try {
-      const endMs = Date.now();
-      const startMs = endMs - 7 * 86400000;
-      const sleepResp = await apiFitAggregate([
-        { dataTypeName: 'com.google.sleep.segment' }
-      ], 1, 7);
-      const buckets = sleepResp.bucket || [];
-      sleepData7 = buckets.map(b => {
-        const ds = b.dataset.find(d => d.dataSourceId.includes('sleep'));
-        if (!ds || !ds.point || !ds.point.length) return null;
-        let totalMs = 0;
-        ds.point.forEach(pt => {
-          // sleep segment type 1=awake, 2=sleep, 3=out-of-bed, 4=light, 5=deep, 6=rem
-          const type = pt.value && pt.value[0] ? pt.value[0].intVal : 0;
-          if (type >= 2 && type !== 3) {
-            const dur = parseInt(pt.endTimeNanos) - parseInt(pt.startTimeNanos);
-            totalMs += dur / 1e6;
-          }
-        });
-        return totalMs > 0 ? Math.round(totalMs / 36000) / 100 : null;
-      });
+      const f = `sleep.interval.civil_end_time >= "${isoDate(7).substring(0,10)}" AND sleep.interval.civil_end_time < "${new Date().toISOString().substring(0,10)}"`;
+      const r = await apiHealthGet('sleep', { filter: f, pageSize: 25 });
+      const pts = r.dataPoints || [];
+      const map = {};
+      for (const pt of pts) {
+        const end = pt.sleep?.interval?.civilEndTime;
+        if (!end) continue;
+        const k = civilDateKey(end);
+        // durata totale (startTime -> endTime in secondi)
+        const st = pt.sleep?.interval?.startTime;
+        const et = pt.sleep?.interval?.endTime;
+        if (st && et) {
+          const dur = (new Date(et) - new Date(st)) / 3600000; // ore
+          map[k] = (map[k] || 0) + dur;
+        }
+      }
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - (6 - i));
+        const k = d.toISOString().substring(0,10);
+        sleepData7[i] = map[k] != null ? Math.round(map[k] * 10) / 10 : null;
+      }
     } catch(e) { console.warn('Sleep fetch failed:', e.message); }
 
-    // Weight (latest)
+    // ---- WEIGHT ----
     updateLoading('Scaricamento peso...');
     try {
-      const wResp = await apiFitAggregate([
-        { dataTypeName: 'com.google.weight.summary' }
-      ], 1, 30);
-      const buckets = wResp.bucket || [];
-      for (let i = buckets.length - 1; i >= 0; i--) {
-        const ds = buckets[i].dataset.find(d => d.dataSourceId.includes('weight'));
-        const pt = ds && ds.point && ds.point[0];
-        if (pt && pt.value && pt.value[0]) {
-          weightVal = Math.round(pt.value[0].fpVal * 10) / 10;
-          break;
-        }
+      const r = await apiHealthGet('weight', { pageSize: 30 });
+      const pts = r.dataPoints || [];
+      if (pts.length > 0) {
+        // prendi il più recente
+        const latest = pts[0];
+        weightVal = latest.weight?.kilograms != null ? Math.round(latest.weight.kilograms * 10) / 10 : null;
       }
     } catch(e) { console.warn('Weight fetch failed:', e.message); }
 
